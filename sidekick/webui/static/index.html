@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSidekick · 控制台</title>
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="logo">鲸</div>
+      <div>
+        <div class="brand-title">DeepSidekick</div>
+        <div class="brand-sub">本机控制台</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <button data-tab="overview" class="active">概览</button>
+      <button data-tab="model">LLM 模型 API</button>
+      <button data-tab="prompt">对话预设</button>
+      <button data-tab="user">用户设定</button>
+      <button data-tab="role">角色设定</button>
+      <button data-tab="game">游戏资料</button>
+      <button data-tab="memory">记忆与任务</button>
+      <button data-tab="stt">听话（STT）</button>
+      <button data-tab="tts">说话（TTS）</button>
+      <button data-tab="pace">画面与节奏</button>
+      <button data-tab="live">直播设置</button>
+    </nav>
+    <div class="side-foot">
+      <div id="side-status" class="badge off">未运行</div>
+      <div class="muted" id="side-port"></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <div>
+        <h1 id="page-title">概览</h1>
+        <div id="page-desc" class="muted"></div>
+      </div>
+      <div class="actions">
+        <button id="btn-start">启动</button>
+        <button id="btn-stop">停止</button>
+        <button id="btn-restart">重启</button>
+      </div>
+    </header>
+
+    <div id="alert-bar" class="alert hidden"></div>
+
+    <section id="tab-overview" class="tab active">
+      <div class="cards" id="overview-cards"></div>
+      <div class="cards" id="feature-cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>启用控制</h2><span class="muted">所有功能开关都在这里；关掉的功能保留配置，重启 runtime 后生效</span></div>
+        <div id="toggles-form"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>运行日志</h2><button id="btn-refresh-log" class="small">刷新</button></div>
+        <pre id="log" class="log"></pre>
+      </div>
+    </section>
+
+    <section id="tab-model" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>当前 Profile</h2><span class="muted">名称里填新名字，点「新建」；下拉只是浏览，点「保存」才切换</span></div>
+        <div class="row">
+          <label for="profile-name">Profile 名称</label>
+          <input id="profile-name" placeholder="profile 名称，如 my-gateway">
+          <button id="btn-add-profile">新建</button>
+        </div>
+        <div class="row">
+          <label for="model-source">当前 Profile</label>
+          <select id="model-source" class="cfg-input"
+                  data-path="llm.source" data-ftype="select"></select>
+          <button id="btn-profile-test">测试连接</button>
+          <button id="btn-profile-save" class="primary">保存</button>
+          <button id="btn-profile-delete" class="danger">删除</button>
+        </div>
+        <div id="profile-fields" class="form-grid"></div>
+      </div>
+    </section>
+
+    <section id="tab-prompt" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>对话预设</h2><span class="muted">预设管「怎么做」：场合、为什么开口、材料怎么读、输出成什么样、直播追加什么</span></div>
+        <div class="row">
+          <label for="preset-new">预设名</label>
+          <input id="preset-new" placeholder="预设名（文件夹名），如 default">
+          <button id="btn-preset-create">新建</button>
+        </div>
+        <div class="row">
+          <label for="preset-list">当前预设</label>
+          <select id="preset-list"></select>
+          <button id="btn-preset-save" class="primary">保存</button>
+          <button id="btn-preset-delete" class="danger">删除</button>
+          <button id="btn-preset-export">导出</button>
+          <button id="btn-preset-import">导入</button>
+          <input type="file" id="preset-import" accept=".zip" hidden>
+          <span id="preset-note" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>条目</h2>
+          <span class="muted">锚点是提示词里固定内容的位置，不能移动；把条目拖到锚点之间，就是它在 prompt 里的位置</span>
+          <button id="btn-prompt-preview" class="small">查看完整提示词</button>
+        </div>
+        <div id="preset-blocks"></div>
+        <div class="row">
+          <button id="btn-preset-add">新增</button>
+          <span class="muted">新条目加在最后（本轮互动消息之后）；改完点上面的「保存」，下一轮生效</span>
+        </div>
+      </div>
+
+      <div class="panel" id="prompt-preview-panel" hidden>
+        <div class="panel-head">
+          <h2>完整提示词</h2>
+          <span class="muted">按已保存的配置现拼一次</span>
+          <button id="btn-prompt-preview-close" class="small">关闭</button>
+        </div>
+        <pre id="prompt-preview" class="log"></pre>
+      </div>
+    </section>
+
+    <section id="tab-user" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>用户档案</h2><span class="muted">档案存在 persona/users/&lt;id&gt;/，只编辑当前这一条</span></div>
+        <div class="row">
+          <label for="user-id-input">用户人设</label>
+          <input id="user-id-input" placeholder="用户人设名（文件夹名），如 user">
+          <button id="btn-user-create">新建</button>
+        </div>
+        <div class="row">
+          <label for="user-list">当前用户</label>
+          <select id="user-list"></select>
+          <button id="btn-user-select" class="primary">保存</button>
+          <button id="btn-user-delete" class="danger">删除</button>
+          <span id="user-note" class="muted"></span>
+        </div>
+        <div id="user-form" class="form-grid"></div>
+      </div>
+    </section>
+
+    <section id="tab-role" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>形象层</h2><span class="muted">全局显示设置；切换角色不变</span></div>
+        <div id="stage-global-form"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>当前角色</h2><span class="muted">下拉只是浏览；点「保存」才切换，重启 runtime 后生效</span></div>
+        <div class="row stage-picker">
+          <label for="role-list">角色</label>
+          <select id="role-list"></select>
+          <button id="btn-role-rescan" type="button">重新扫描模型目录</button>
+          <button id="btn-role-select" type="button" class="primary">保存</button>
+          <button id="btn-role-export" type="button">导出</button>
+          <button id="btn-role-import" type="button">导入</button>
+          <input type="file" id="role-import" accept=".zip" hidden>
+          <span id="role-scan-note" class="muted"></span>
+        </div>
+        <p id="role-pack-note" class="muted" hidden></p>
+        <p id="role-broken" class="broken-note" hidden></p>
+        <p id="role-info" class="muted"></p>
+      </div>
+
+      <details class="panel fold" open>
+        <summary><h2>角色设定</h2><span class="muted">只写这个角色自己的值；留空就是空</span></summary>
+        <div class="fold-body">
+          <div id="role-profile-form" class="form-grid"></div>
+          <div class="row">
+            <button id="btn-role-profile-save" class="primary">保存角色设定</button>
+            <span id="role-profile-meta" class="muted"></span>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel fold">
+        <summary><h2>角色人设</h2><span id="role-persona-meta" class="muted"></span></summary>
+        <div class="fold-body">
+          <textarea id="role-persona-text" class="code" rows="18"></textarea>
+          <div class="row">
+            <button id="btn-role-persona-save" class="primary">保存人设</button>
+          </div>
+          <p class="muted">只有一个 persona.md，只写「这个人是谁」：来历、性格、口气、口头禅、语气样本。
+            场合、为什么开口、材料怎么读、输出契约、去八股、直播追加都在「对话预设」里。</p>
+        </div>
+      </details>
+
+      <details class="panel fold" open>
+        <summary><h2>形象预览</h2><span class="muted">用当前表单值，不要求先保存</span></summary>
+        <div class="fold-body">
+          <div class="preview-wrap">
+            <iframe id="stage-preview" title="形象预览"></iframe>
+          </div>
+          <div class="row">
+            <button id="btn-preview-refresh">刷新预览</button>
+            <a id="stage-open" class="muted" target="_blank" rel="noopener">在新窗口打开预览</a>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel fold" open>
+        <summary><h2>动作规则</h2><span id="rules-path" class="muted"></span></summary>
+        <div class="fold-body">
+          <div class="row">
+            <label>可用动作 / 表情</label>
+            <div id="rules-tags" class="muted"></div>
+          </div>
+          <div class="row">
+            <label class="inline"><input type="checkbox" id="rules-enabled"> 启用动作规则</label>
+            <span class="muted">关闭后 LLM 不注入也不执行 &lt;ACT&gt;；自主驱动仍独立运行</span>
+          </div>
+          <textarea id="rules-text" rows="6" maxlength="2000"
+                    placeholder="还没有规则；可以手写，或点「生成标签表」后修改再保存。"></textarea>
+          <div class="row">
+            <button id="btn-rules-save" class="primary">保存规则</button>
+            <button id="btn-rules-generate">生成标签表</button>
+            <button id="btn-rules-clear" class="danger">清空</button>
+            <span id="rules-state" class="muted">0/2000</span>
+          </div>
+          <p class="muted">规则保存到当前角色文件夹的 actions.md；「生成标签表」按当前形象的动作/表情填进编辑框（不规定什么时候用），不会自动保存；保存后下一轮生效。</p>
+        </div>
+      </details>
+
+      <details class="panel fold" open>
+        <summary><h2>自主驱动</h2><span id="autonomy-path" class="muted"></span></summary>
+        <div class="fold-body">
+          <div id="autonomy-summary" class="muted">尚未读取配置</div>
+          <div class="row">
+            <label class="inline"><input type="checkbox" id="autonomy-enabled"> 启用自主驱动</label>
+            <span class="muted">关闭后回到模型自带动作/自动眨眼呼吸；改完重启 runtime</span>
+          </div>
+          <div class="row">
+            <button id="btn-autonomy-audit">审计模型</button>
+            <button id="btn-autonomy-generate" class="primary">生成配置</button>
+            <button id="btn-autonomy-apply">应用</button>
+            <button id="btn-autonomy-delete" class="danger">删除</button>
+            <span id="autonomy-meta" class="muted"></span>
+          </div>
+          <textarea id="autonomy-preview" class="code" rows="12" readonly
+                    placeholder="点「生成配置」后在这里预览；应用前不会写盘。"></textarea>
+          <p class="muted">生成会先审计模型，再让 LLM 输出 motion_profile.json；校验/修复失败时自动用确定性默认配置。应用后需要重启 runtime，不热重载。</p>
+        </div>
+      </details>
+
+      <details class="panel fold" open>
+        <summary><h2>形象设置</h2><span class="muted">只对当前角色生效，换角色随角色切换</span></summary>
+        <div class="fold-body">
+          <div id="role-stage-form" class="form-grid"></div>
+          <div class="row">
+            <button id="btn-role-stage-save" class="primary">保存形象设置</button>
+            <span id="role-stage-meta" class="muted"></span>
+          </div>
+          <p class="muted">外观随角色保存在 persona/roles/&lt;id&gt;/profile.yaml；上方「当前角色」里的启用/显示/地址/端口是全局运行设置。</p>
+        </div>
+      </details>
+    </section>
+
+    <section id="tab-game" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>游戏世界书</h2><span class="muted">名称里填新名字点「新建」；下拉只是浏览，切换要点「保存」</span></div>
+        <div class="row">
+          <label for="game-id-input">游戏名称</label>
+          <input id="game-id-input" placeholder="游戏 ID，如 my-game">
+          <button id="btn-game-create">新建</button>
+        </div>
+        <div class="row">
+          <label for="game-list">当前游戏</label>
+          <select id="game-list"></select>
+          <button id="btn-game-select" class="primary">保存</button>
+          <button id="btn-game-delete" class="danger">删除</button>
+          <button id="btn-game-export">导出</button>
+          <button id="btn-game-import">导入</button>
+          <input type="file" id="game-import" accept=".zip" hidden>
+          <span id="game-pack-note" class="muted"></span>
+        </div>
+      </div>
+
+      <details class="panel fold" open>
+        <summary><h2>背景总览（core）</h2><span class="muted">常驻；可随时改</span></summary>
+        <div class="fold-body">
+          <div class="row"><button id="btn-game-save" class="primary">保存总览</button></div>
+          <textarea id="game-text" class="code" rows="16"></textarea>
+          <div id="game-meta" class="muted"></div>
+        </div>
+      </details>
+
+      <details class="panel fold" open>
+        <summary><h2>背景条目（常驻/关键词）</h2><span class="muted">always = 常驻；keys = 关键词</span></summary>
+        <div class="fold-body">
+          <div class="row">
+            <button id="btn-entry-add">新增条目</button>
+            <span class="muted">运行时也可以改，下一轮生效</span>
+          </div>
+          <div id="worldbook-entries"></div>
+        </div>
+      </details>
+    </section>
+
+    <section id="tab-memory" class="tab">
+      <div class="cards" id="memory-cards"></div>
+      <details class="panel fold" open>
+        <summary><h2>记忆设置</h2><span class="muted">条数与召回；留空 = 用默认值</span></summary>
+        <div class="fold-body"><div id="memory-config"></div></div>
+      </details>
+      <details class="panel fold">
+        <summary><h2>语义记忆模型</h2><span class="muted">本地向量召回；下载/删除/选择，换模型后重启 runtime</span></summary>
+        <div class="fold-body"><div id="embed-models"></div></div>
+      </details>
+      <details class="panel fold" open>
+        <summary><h2>陪玩记忆</h2><span class="muted">全局，跨游戏保留；按总结时间排列</span></summary>
+        <div class="fold-body">
+          <div class="row"><button id="btn-companion-add">新增</button></div>
+          <div id="companion-table"></div>
+        </div>
+      </details>
+      <details class="panel fold" open>
+        <summary>
+          <h2>游戏记忆</h2>
+          <span id="game-memory-title" class="muted">当前世界书</span>
+        </summary>
+        <div class="fold-body">
+          <div class="row"><button id="btn-game-mem-add">新增</button></div>
+          <div class="row" id="game-mem-tabs">
+            <button class="small primary" data-game-mem="plot">剧情</button>
+            <button class="small" data-game-mem="npc">人物</button>
+            <button class="small" data-game-mem="quests">任务</button>
+          </div>
+          <div id="game-memory-table"></div>
+        </div>
+      </details>
+    </section>
+
+    <section id="tab-tts" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>当前声音</h2><span class="muted">按来源选择；保存后重启 runtime 生效；声音不随角色切换</span></div>
+        <input type="hidden" id="tts-source" class="cfg-input" data-path="tts.source" data-ftype="text">
+        <input type="hidden" id="tts-preset" class="cfg-input" data-path="" data-ftype="text">
+        <div class="row">
+          <label for="tts-profile-name">声音名称</label>
+          <input id="tts-profile-name" placeholder="新声音名，如 my-fish">
+          <button id="btn-tts-new">新建</button>
+        </div>
+        <div class="row">
+          <label for="tts-profile">当前声音</label>
+          <select id="tts-profile"></select>
+          <button id="btn-tts-save" class="primary">保存</button>
+          <button id="btn-tts-delete" class="danger">删除</button>
+          <span id="tts-profile-note" class="muted"></span>
+        </div>
+        <div class="row">
+          <label for="tts-vendor">来源</label>
+          <select id="tts-vendor"></select>
+          <a id="tts-doc" class="muted" target="_blank" rel="noopener">注册 / 文档</a>
+        </div>
+        <div id="tts-fields" class="form-grid"></div>
+        <div class="row">
+          <input id="tts-preview-text" value="嗨，能听见吗？">
+          <button id="btn-tts-preview">试听</button>
+        </div>
+        <audio id="tts-audio" controls class="hidden"></audio>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>通用</h2><span class="muted">响度、流式、分段、预取、超时；不随来源切换</span></div>
+        <div id="tts-common-form"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>出口过滤</h2><span class="muted">只影响说出口的文字；不随来源切换</span></div>
+        <div id="tts-guard-form"></div>
+      </div>
+    </section>
+
+    <section id="tab-stt" class="tab">
+      <div class="panel">
+        <div class="panel-head"><h2>麦克风</h2><span class="muted">设备形态、灵敏度与切句；换设备后重启即可</span></div>
+        <div id="mic-form"></div>
+        <p id="mic-live" class="muted"></p>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>识别引擎</h2><span class="muted">sherpa-onnx；当前模型只能从已下载的里选</span></div>
+        <div id="stt-form"></div>
+      </div>
+      <details class="panel fold">
+        <summary><h2>语音识别模型</h2><span class="muted">按体积从小到大；CPU 数字随机器差异很大，只作横向参考</span></summary>
+        <div class="fold-body"><div id="stt-models"></div></div>
+      </details>
+    </section>
+
+    <section id="tab-pace" class="tab">
+      <div id="pace-forms"></div>
+    </section>
+
+    <section id="tab-live" class="tab">
+      <div id="live-forms"></div>
+    </section>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h2 id="modal-title">编辑</h2><button id="modal-close">×</button></div>
+    <div id="modal-body"></div>
+    <div class="modal-foot">
+      <button id="modal-cancel">取消</button>
+      <button id="modal-ok" class="primary">确定</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script src="/ui/app.js"></script>
+</body>
+</html>

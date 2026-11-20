@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+# DeepSidekick 依赖
+#
+# 装法（用工作区里的 venv，不碰系统 Python）：
+#   python -m venv .venv
+#   .venv\Scripts\python -m pip install --no-cache-dir -r requirements.txt
+#
+# 三个坑：
+#   1. 这个文件必须带上面那行编码声明，否则 Windows 上 pip 按 GBK 读会炸。
+#   2. 网络慢或连接不稳定时，可以给 pip 加 --proxy <你的代理地址>，或换国内镜像。
+#   3. 不要加 --upgrade pip：3.12 自带的 23.x 够用，升级反而可能引入新问题。
+
+# 弹幕
+#   blivedm 不在 PyPI（PyPI 上同名包是别的东西），且它装的时候会卡在隔离构建环境。
+#   所以不用 pip 装，源码已经 vendor 在 vendor/blivedm/（commit 3bf17fe），见该目录 UPSTREAM.txt。
+#   但它自己要 pure-protobuf —— 少了这个，danmu_source: bili 会在 import 时就炸。
+aiohttp>=3.9
+Brotli
+pure-protobuf>=3.0
+
+# 截屏
+dxcam>=0.3
+pillow>=10
+numpy
+soxr>=0.3                  # 重采样（24k↔48k/44.1k 带抗混叠），纯轮子
+
+# 说话（厂商走 HTTP API；Edge 免 key 兜底）
+#   edge-tts 返回 mp3，miniaudio 解；其余厂商由 tts_presets.py 描述协议。
+edge-tts>=6.1              # 兜底：免费、不要 key，没有情感控制
+miniaudio>=1.59            # 纯轮子的 mp3 解码器，不需要 ffmpeg
+sounddevice>=0.4.6
+
+# 听话（你的语音转文字）
+#   sherpa-onnx + SenseVoice-Small：CPU 上 RTF 0.02~0.05，
+#   5 秒语音约 170~250 ms（faster-whisper small 要 2100 ms，已移除）。
+#   模型在 state/asr/<模型id>/，跟着项目走，换机器不用重下。
+sherpa-onnx>=1.12          # 一个库覆盖 SenseVoice / Paraformer / FireRedASR / Qwen3-ASR ...
+certifi                    # 走代理时用它当 CA，避免 SSL: CERTIFICATE_VERIFY_FAILED
+fastembed>=0.9.1,<0.10     # 本地向量召回；自带 onnxruntime/tokenizers，不引入 torch
+
+# 配置 / WebUI
+pyyaml>=6
+ruamel.yaml>=0.18        # WebUI 写 config.yaml 时保留注释
+psutil>=5.9              # WebUI 的 runtime 进程管理
+
+# 桌面透明窗：Pygame + live2d-py 原生 Live2D
+live2d-py>=1.0
+pygame>=2.6
+PyOpenGL>=3.1
+pywin32>=306
+
+# 截屏不需要 opencv：dxcam 用 processor_backend="numpy"（轮子自带 Cython 内核）。
+# 如果日志里出现 dxcam.grab 失败：No module named 'cv2'，说明那个轮子没带内核，
+# 装 opencv-python-headless 即可（也可以不管，会自动退回 PIL 抓屏，只是慢一点）。

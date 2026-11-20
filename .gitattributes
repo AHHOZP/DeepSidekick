@@ -1,0 +1,2 @@
+# Windows 批处理入口必须保持 CRLF；cmd.exe 对 LF 的多行块解析不可靠。
+*.bat text eol=crlf

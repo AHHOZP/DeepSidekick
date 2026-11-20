@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSidekick</title>
+<link rel="stylesheet" href="/s/style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="bubble"><span id="bubble-text"></span></div>
+
+  <div id="avatar">
+    <canvas id="canvas"></canvas>
+    <img id="image" alt="">
+  </div>
+</div>
+
+<div id="hint">连不上本地服务 —— 先跑 <b>python -m sidekick</b> 或 <b>.\run.bat</b></div>
+<div id="dbg"></div>
+
+<!-- Inspector：右侧面板，默认隐藏；?inspect=1 或 WebUI 预览按钮打开 -->
+<aside id="inspector" aria-hidden="true">
+  <header>
+    <b id="ins-title">Inspector</b>
+    <span id="ins-sub"></span>
+  </header>
+  <nav id="ins-tabs">
+    <button data-tab="param" class="on">参数</button>
+    <button data-tab="part">部件</button>
+    <button data-tab="motion">动作</button>
+    <button data-tab="expr">表情</button>
+    <button data-tab="look">外观</button>
+    <button data-tab="diag">诊断</button>
+  </nav>
+  <div id="ins-body"></div>
+  <footer>
+    <button id="ins-reset">全部复位</button>
+    <button id="ins-reload">重载模型</button>
+    <span id="ins-foot"></span>
+  </footer>
+</aside>
+
+<link rel="stylesheet" href="/s/lib/spine-player.css">
+<script src="/s/lib/live2dcubismcore.min.js"></script>
+<script src="/s/lib/pixi.min.js"></script>
+<script src="/s/lib/live2d-engine.min.js"></script>
+<script src="/s/app.js"></script>
+</body>
+</html>

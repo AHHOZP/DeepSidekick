@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSidekick · 自检</title>
+<style>
+  html, body {
+    margin: 0; height: 100%;
+    /* 必须是透明的：直播姬能不能透出后面的画面，就看卡片以外这片区域。
+       以前这里涂成不透明红色，整页永远是红的，根本验不出透明度。 */
+    background: transparent;
+    color: #fff;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  .wrap {
+    padding: 3vh 4vh;
+    background: rgba(20, 24, 30, .82);   /* 只给文字卡片上底色，卡片外保持透明 */
+    border: .5vh solid #e23b3b;
+    border-radius: 1.2vh;
+    display: inline-block;
+    margin: 2vh;
+  }
+  h1 { font-size: 4vh; margin: 0 0 1.6vh; letter-spacing: .04em; }
+  .hint { font-size: 2.2vh; opacity: .85; margin-bottom: 2.6vh; line-height: 1.5; }
+  ul { list-style: none; padding: 0; margin: 0; font-size: 2.4vh; line-height: 1.9; }
+  li b { display: inline-block; min-width: 15vh; opacity: .8; font-weight: 500; }
+  .ok { color: #b6ffc4; }
+  .bad { color: #ffd2d2; }
+  .note { margin-top: 2.6vh; font-size: 2vh; opacity: .8; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DeepSidekick 自检</h1>
+  <div class="hint">
+    这一页只回答两件事：<b>直播姬的内置浏览器能不能跑 Live2D（WebGL）</b>，
+    和<b>背景能不能真透明</b>。
+  </div>
+  <ul id="out"></ul>
+  <div class="note">
+    <b>看卡片外面</b>：能看到游戏/桌面，说明浏览器素材支持透明；<br>
+    如果卡片外面是一整块黑/白/红，说明不支持透明，改用绿幕 + 抠像。<br>
+    卡片本身有底色是正常的（否则文字看不清）。
+  </div>
+</div>
+<script>
+(function () {
+  const rows = [];
+  function add(k, v, good) { rows.push([k, v, good]); }
+
+  let gl = null, gl2 = null;
+  try {
+    // 必须两个独立 canvas：同一个 canvas 拿到 webgl 之后再要 webgl2 永远是 null
+    gl = document.createElement('canvas').getContext('webgl')
+      || document.createElement('canvas').getContext('experimental-webgl');
+    gl2 = document.createElement('canvas').getContext('webgl2');
+  } catch (e) {}
+
+  add('WebGL 1', gl ? '有' : '没有', !!gl);
+  add('WebGL 2', gl2 ? '有' : '没有（不影响，Live2D 用 WebGL1）', !!gl2);
+  try {
+    const c = document.createElement('canvas');
+    add('2D canvas', c.getContext('2d') ? '有' : '没有', true);
+  } catch (e) { add('2D canvas', '没有', false); }
+
+  add('窗口尺寸', innerWidth + ' × ' + innerHeight, true);
+  add('像素比', String(window.devicePixelRatio || 1), true);
+  add('页面地址', location.href, true);
+  add('用户代理', navigator.userAgent, true);
+
+  const ul = document.getElementById('out');
+  rows.forEach(function (r) {
+    const li = document.createElement('li');
+    const k = document.createElement('b');
+    k.textContent = r[0];
+    const v = document.createElement('span');
+    v.className = r[2] ? 'ok' : 'bad';
+    v.textContent = r[1];
+    li.appendChild(k);
+    li.appendChild(v);
+    ul.appendChild(li);
+  });
+})();
+</script>
+</body>
+</html>
